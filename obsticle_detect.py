@@ -9,7 +9,7 @@ import math
 
 class ObstacleDetector:
 
-    def __init__(self, encoder='vits', dist_threshold=2, mask_threshold=1.6, debug=False):
+    def __init__(self, encoder='vits', dist_threshold=2, mask_threshold=1.6, foreground_threshold=3, background_threshold=0.2, debug=False, write_img=False):
         DEVICE = 'cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu'
 
         model_configs = {
@@ -28,7 +28,13 @@ class ObstacleDetector:
         self.dist_threshold = dist_threshold # used in absolute depth thresholding
         self.mask_threshold = mask_threshold # used in masking normalzied depth for bbox extraction
 
+        self.foreground_threshold = foreground_threshold # used in finding foreground row
+        self.background_threshold = background_threshold # used in finding background row
+
         self.debug = debug
+        self.write_img = write_img
+        if self.write_img:
+            os.makedirs("./debug", exist_ok=True)
 
     def detect_obstacles(self, img_path):
         """
@@ -70,7 +76,7 @@ class ObstacleDetector:
         # find foreground
         foreground_row = 360
         for row in range(depth.shape[0]):
-            if np.median(depth[row, :]) > 3:
+            if np.median(depth[row, :]) > self.foreground_threshold:
                 foreground_row = row
                 break
         print(f"[INFO] Detected foreground row at: {foreground_row}")
@@ -78,7 +84,7 @@ class ObstacleDetector:
         # find background
         background_row = 0
         for row in range(depth.shape[0]):
-            if np.mean(depth[row, :]) > 0.2:
+            if np.mean(depth[row, :]) > self.background_threshold:
                 background_row = row
                 break
         print(f"[INFO] Detected background row at: {background_row}")
@@ -270,16 +276,25 @@ class ObstacleDetector:
         return bboxes, mask
     
     def visualize_img(self, img):
-        cv2.imshow("image", img)
+        if self.write_img:
+            cv2.imwrite("./debug/debug_image.png", img)
+        else:
+            cv2.imshow("image", img)
     
     def visualize_bboxes(self, img, bboxes):
         for (x, y, w, h) in bboxes:
             cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        cv2.imshow("bboxes", img)
+        if self.write_img:
+            cv2.imwrite("./debug/debug_bboxes.png", img)
+        else:
+            cv2.imshow("bboxes", img)
     
     def visualize_depth(self, depth, label="depth"):
         colored_depth = self.depth_to_colormap(depth)
-        cv2.imshow(label, colored_depth)
+        if self.write_img:
+            cv2.imwrite(f"./debug/debug_{label}.png", colored_depth)
+        else:
+            cv2.imshow(label, colored_depth)
 
     def depth_to_colormap(self, depth_hw: np.ndarray, colormap=cv2.COLORMAP_TURBO) -> np.ndarray:
         d = depth_hw.astype(np.float32)
@@ -293,7 +308,7 @@ class ObstacleDetector:
     
 
 if __name__ == "__main__":
-    detector = ObstacleDetector(debug=True)
+    detector = ObstacleDetector(debug=True, write_img=True)
     test_img_path = "/Users/allynbao/Documents/ml/ORCA_computer_vision/ORCA_Computer_Vision/datasets/front-cam/run_24_front/img_027.jpg"
     print("Process image")
     bboxes = detector.detect_obstacles(test_img_path)
