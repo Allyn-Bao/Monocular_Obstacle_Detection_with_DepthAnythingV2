@@ -1,8 +1,8 @@
-### Monocular Obsticle Detection with DepthAnything V2
+# Monocular Obsticle Detection with DepthAnything V2
 
 This repository implements an image processing pipeline to detect and localize arbitary objects from monocular camera feed in road or water envirnments.
 
-# To run:
+## To run:
 ```
 from obsticle_detect import ObstacleDetector
 
