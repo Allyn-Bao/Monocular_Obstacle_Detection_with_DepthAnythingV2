@@ -46,7 +46,7 @@ class ObstacleDetector:
 
         print("[INFO] Processing image for obstacle detection... debug mode:", self.debug)
 
-        img = img = cv2.resize(img, (480, 360), interpolation=cv2.INTER_AREA)
+        # img = img = cv2.resize(img, (480, 360), interpolation=cv2.INTER_AREA)
         depth = self.model.infer_image(img)
         og_depth = depth.copy() # for debugging visualization
         
@@ -106,10 +106,6 @@ class ObstacleDetector:
         for bbox in bboxes:
             x, y, w, h = bbox
             updated_bbox = (x, y + background_row, w, h)
-            # resize bbox back to original image coordinates
-            scale_x = img.shape[1] / depth.shape[1]
-            scale_y = img.shape[0] / depth.shape[0]
-            updated_bbox = (int(updated_bbox[0] * scale_x), int(updated_bbox[1] * scale_y), int(updated_bbox[2] * scale_x), int(updated_bbox[3] * scale_y))
             updated_bboxes.append(updated_bbox)
 
         
@@ -308,7 +304,7 @@ class ObstacleDetector:
     
 
 if __name__ == "__main__":
-    detector = ObstacleDetector(debug=True, write_img=True)
+    detector = ObstacleDetector(debug=True, write_img=False)
     test_img_path = "/Users/allynbao/Documents/ml/ORCA_computer_vision/ORCA_Computer_Vision/datasets/front-cam/run_24_front/img_027.jpg"
     img = cv2.imread(test_img_path)
     print("Process image")
